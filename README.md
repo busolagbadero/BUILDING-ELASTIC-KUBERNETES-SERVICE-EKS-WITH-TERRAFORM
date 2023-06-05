@@ -261,11 +261,117 @@ autoscaling_maximum_size_by_az = 10
 autoscaling_average_cpu                  = 30
 ```
 
-- Run terraform init
+- Run `terraform init`
 
 ![x2](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/f6a0dfaf-3a70-4a97-a481-3c4930f9a549)
 
-- Run Terraform plan 
+- Run `terraform plan` 
 
 ![x3](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/0377b55a-b008-49ab-a3cb-b14681f336b5)
+
+- Run `terraform apply`. When executing the "terraform apply" command to create resources, it is likely that you will encounter an error at some point during the process. This error typically arises due to Terraform's need to establish a connection and accurately configure the credentials in order to connect to the cluster using the kubeconfig.
+- 
+![x4](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/457ded41-e9c0-49ff-9f5d-c18f93c94cb7)
+
+- To fix this problem , Append the file data.tf file
+
+# get EKS cluster info to configure Kubernetes and Helm providers
+```
+data "aws_eks_cluster" "cluster" {
+  name = module.eks_cluster.cluster_id
+}
+data "aws_eks_cluster_auth" "cluster" {
+  name = module.eks_cluster.cluster_id
+}
+
+```
+
+## Append to the file provider.tf
+
+```
+# get EKS authentication for being able to manage k8s objects from terraform
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+}
+
+```
+
+- Run the init and plan again
+
+![x5](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/a7e5a092-9774-47fa-bc90-32e132b651a6)
+
+![x6](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/9221d7bb-7ff1-4a3f-bf27-111a25ebacae)
+
+- Create kubeconfig file using awscli.
+
+![x7](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/be7a9ea0-f56b-4398-93f9-eed1d2f15fe7)
+
+## Installing Helm From Script
+
+- `wget https://github.com/helm/helm/archive/refs/tags/v3.6.3.tar.gz`
+- Unpack the tar.gz file. ` tar -zxvf v3.6.3.tar.gz` 
+- `cd helm-3.6.3`
+- Build the source code using make utility. `make build`
+- `sudo mv bin/helm /usr/bin/`
+- Check that Helm is installed
+
+![x8](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/5fa685ec-9320-4c2c-8458-1eebbad2bb2b)
+
+## DEPLOY JENKINS WITH HELM
+
+- One of the remarkable aspects of Helm is its ability to deploy applications easily by leveraging pre-packaged charts from public Helm repositories. This means that you can deploy applications like Jenkins with minimal configuration required. Helm simplifies the process by providing a convenient way to fetch the necessary dependencies and deploy applications with just a few simple commands. For instance, you can quickly deploy Jenkins by specifying the appropriate Helm chart and providing any necessary customizations or configuration options. This streamlined approach saves time and effort, making application deployment a breeze.
+ 
+ ## STEPS 
+ 
+- Visit Artifact Hub to find packaged applications as Helm Charts
+- Search for Jenkins
+- Add the repository to helm so that you can easily download and deploy. `helm repo update`
+- `helm install myjenkins jenkins/jenkins --kubeconfig kubeconfig file`
+
+![x19](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/912b8978-01a0-4fe9-83f0-983887ce86e2)
+
+- Check the Helm deployment `helm ls --kubeconfig kubeconfig file`
+- 
+![x45](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/078a72e8-a12e-4d3f-9cd6-5ae8a0cbb633)
+
+- Check the pods
+
+![x21](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/a4443d19-dcf5-4e89-a5bc-fb24e74483b5)
+
+- Describe the running pod
+
+![x22](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/934287e6-0198-4af2-912f-1f9be7b3031f)
+
+- Check the logs of the running pod, You will notice an output with an error.
+
+![x46](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/ccaee3b2-e949-48da-b650-2e9936807041)
+
+- Since the pod contains multiple containers, including the Jenkins container and the config-reload Sidecar container, it is necessary to specify the exact pod for which you want to view the logs. This additional information will help kubectl identify the specific pod you are interested in. Consequently, the command should be updated to include the pod name or identifier, ensuring that kubectl retrieves the logs for the correct pod.Hence, the command will be updated like`kubectl logs myjenkins-0 -c jenkins --kubeconfig kubeconfig file`
+
+- To avoid the need to call the kubeconfig file every time and to handle situations where the default kubeconfig file may already be in use by another cluster, you can leverage a kubectl plugin called "konfig". This plugin allows you to merge multiple kubeconfig files together, providing a unified configuration. You can then select the desired kubeconfig to be active.To install the krew package manager for kubectl and enable the installation of plugins to enhance the functionality of kubectl, follow these steps:
+  - Install the konfig plugin `kubectl krew install konfig`
+  - Import the kubeconfig into the default kubeconfig file. Ensure to accept the prompt to overide.`sudo kubectl konfig import --save  kubeconfig file`
+  - Show all the contexts – Meaning all the clusters configured in your kubeconfig. If you have more than 1 Kubernetes clusters configured, you will see them all     in the output. `kubectl config get-contexts`
+  
+  ![x26](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/93907242-bc3e-4acf-a06e-654803b1ef09)
+
+  - Set the current context to use for all kubectl and helm commands `kubectl config use-context tooling-app-eks`
+  
+  ![x23](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/6dabcc51-576d-4847-abe5-9fec50aeadf0)
+
+  - Test that it is working without specifying the --kubeconfig flag `kubectl get po`
+
+    ![x28](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/0db7f694-461d-41d5-8e1f-908888a212ce)
+
+  - Display the current context. This will let you know the context in which you are using to interact with Kubernetes.`kubectl config current-context`
+  - 
+  ![x27](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/a7314a0c-e5ae-4e15-9a35-877bd4528067)
+
+  
+
+
+
+
 
