@@ -366,8 +366,37 @@ provider "kubernetes" {
     ![x28](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/0db7f694-461d-41d5-8e1f-908888a212ce)
 
   - Display the current context. This will let you know the context in which you are using to interact with Kubernetes.`kubectl config current-context`
-  - 
+   
   ![x27](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/a7314a0c-e5ae-4e15-9a35-877bd4528067)
+
+  
+- Now that we can use kubectl without the --kubeconfig flag, Lets get access to the Jenkins UI.
+- There are some commands that was provided on the screen when Jenkins was installed with Helm.Run the commands to set up Jenkins.
+- Get the password to the admin user `kubectl exec --namespace default -it svc/jenkins -c jenkins -- /bin/cat /run/secrets/chart-admin-password && echo`
+- Use port forwarding to access Jenkins from the UI `kubectl --namespace default port-forward svc/jenkins 8080:8080`
+
+![x29](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/9efcd472-82cb-4919-9d4e-dd50bf758e7c)
+
+![x30](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/51470020-58fd-4670-8b73-3b27a79a0c57)
+
+![x31](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/0e10899e-1dcb-47e2-9afd-9034226394f3)
+
+- To install Prometheus, Nginx, and Grafana, you can visit the ArtifactHub website and follow the instructions provided to download the respective Helm charts.
+  - Access the ArtifactHub website.
+  - Search for the desired charts, such as "Prometheus," "Nginx," and "Grafana."
+  - Locate the Helm charts for each application and click on their respective links.
+  - On the chart page, you will find installation instructions specific to each chart.
+  - Follow the provided instructions to download and install the Helm charts using the Helm package manager.
+  
+  ![x39](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/1e3ec760-27f5-4622-839c-01df6ccb58c0)
+  
+  ![x40](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/e13210b5-3093-4561-a1ab-01354da40e37)
+  
+  ![x41](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/31adfe5b-fc41-4ce0-83bb-77dcee1d3018)
+  
+  ![x43](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/fd3c0815-2192-4493-bb8f-5ab5a9286401)
+  
+  ![x42](https://github.com/busolagbadero/BUILDING-ELASTIC-KUBERNETES-SERVICE-EKS-WITH-TERRAFORM/assets/94229949/bbfccd24-980f-4b98-999c-fb847fc13b9d)
 
   
 
